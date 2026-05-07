@@ -18,7 +18,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_layers',  default=2,      type=int)
     parser.add_argument('--hidden_size', default=64,     type=int)
     parser.add_argument('--window_size', default=10,     type=int)
-    parser.add_argument('--num_epochs',  default=30,    type=int)
+    parser.add_argument('--num_epochs',  default=30,     type=int)
     parser.add_argument('--batch_size',  default=2*15,   type=int)
     parser.add_argument('--ratio',       default=1.0,    type=float,
                         help='Fraction of benign log to use for training (0~1], '
@@ -28,6 +28,14 @@ if __name__ == '__main__':
 
     input_size = 1
     model_dir  = 'model'
+    use_cuda   = device.type == 'cuda'
+
+    # ── GPU setup ─────────────────────────────────────────────────────────────
+    if use_cuda:
+        torch.backends.cudnn.benchmark = True
+        print(f'[Device] GPU : {torch.cuda.get_device_name(0)}')
+    else:
+        print('[Device] CPU (CUDA not available)')
 
     # ── Load & parse log ──────────────────────────────────────────────────────
     print(f'[BGL Train] log  : {args.benign_log}')
@@ -53,7 +61,8 @@ if __name__ == '__main__':
     dataset    = TensorDataset(torch.tensor(inputs, dtype=torch.float),
                                torch.tensor(outputs))
     dataloader = DataLoader(dataset, batch_size=args.batch_size,
-                            shuffle=True, pin_memory=True)
+                            shuffle=True, pin_memory=use_cuda,
+                            num_workers=0)
 
     # ── Model & optimizer ─────────────────────────────────────────────────────
     log_tag = (f'BGL_Adam'
@@ -75,9 +84,10 @@ if __name__ == '__main__':
     for epoch in range(args.num_epochs):
         train_loss = 0.0
         for seq, label in dataloader:
-            seq    = seq.view(-1, args.window_size, input_size).to(device)
+            seq    = seq.view(-1, args.window_size, input_size).to(device, non_blocking=use_cuda)
+            label  = label.to(device, non_blocking=use_cuda)
             output = model(seq)
-            loss   = criterion(output, label.to(device))
+            loss   = criterion(output, label)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()

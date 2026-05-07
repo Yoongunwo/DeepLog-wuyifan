@@ -16,6 +16,7 @@ def evaluate(model, inputs, outputs, window_size, num_candidates,
     among the top-g predicted keys.
     Returns (num_detected, total_windows).
     """
+    use_cuda = device.type == 'cuda'
     model.eval()
     detected = 0
     n = len(inputs)
@@ -26,13 +27,13 @@ def evaluate(model, inputs, outputs, window_size, num_candidates,
             b_out = outputs[i:i + batch_size]
 
             seq    = torch.tensor(b_in, dtype=torch.float) \
-                         .view(-1, window_size, input_size).to(device)
-            labels = torch.tensor(b_out).to(device)          # (B,)
+                         .view(-1, window_size, input_size).to(device, non_blocking=use_cuda)
+            labels = torch.tensor(b_out).to(device, non_blocking=use_cuda)  # (B,)
 
-            out   = model(seq)                                # (B, num_keys)
+            out   = model(seq)                                               # (B, num_keys)
             top_g = torch.argsort(out, dim=1, descending=True)[:, :num_candidates]  # (B, g)
 
-            match     = (top_g == labels.unsqueeze(1)).any(dim=1)  # (B,)
+            match     = (top_g == labels.unsqueeze(1)).any(dim=1)           # (B,)
             detected += (~match).sum().item()
 
     return detected, n
@@ -53,6 +54,14 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     input_size = 1
+    use_cuda   = device.type == 'cuda'
+
+    # ── GPU setup ─────────────────────────────────────────────────────────────
+    if use_cuda:
+        torch.backends.cudnn.benchmark = True
+        print(f'[Device] GPU : {torch.cuda.get_device_name(0)}')
+    else:
+        print('[Device] CPU (CUDA not available)')
 
     # ── Load vocab & model ────────────────────────────────────────────────────
     vocab = load_vocab(args.vocab_path)
