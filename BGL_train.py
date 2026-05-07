@@ -15,12 +15,12 @@ from BGL_utils import (
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='DeepLog training on BGL dataset')
-    parser.add_argument('-num_layers',  default=2,      type=int)
-    parser.add_argument('-hidden_size', default=64,     type=int)
-    parser.add_argument('-window_size', default=10,     type=int)
-    parser.add_argument('-num_epochs',  default=100,    type=int)
-    parser.add_argument('-batch_size',  default=2048,   type=int)
-    parser.add_argument('-ratio',       default=1.0,    type=float,
+    parser.add_argument('--num_layers',  default=2,      type=int)
+    parser.add_argument('--hidden_size', default=64,     type=int)
+    parser.add_argument('--window_size', default=10,     type=int)
+    parser.add_argument('--num_epochs',  default=30,    type=int)
+    parser.add_argument('--batch_size',  default=2*15,   type=int)
+    parser.add_argument('--ratio',       default=1.0,    type=float,
                         help='Fraction of benign log to use for training (0~1], '
                              'taken sequentially from the start (time order)')
     parser.add_argument('-benign_log',  default='../Data/BGL/BGL_benign.log', type=str)
