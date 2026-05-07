@@ -3,7 +3,38 @@ import pickle
 import torch
 import torch.nn as nn
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+def select_device(gpu_id=None):
+    """
+    Select compute device and print selection info.
+      gpu_id=None  → auto-select the GPU with the most free memory
+      gpu_id=int   → use that specific GPU index
+    Returns a torch.device.
+    """
+    if not torch.cuda.is_available():
+        print('[Device] CPU (CUDA not available)')
+        return torch.device('cpu')
+
+    n = torch.cuda.device_count()
+    if gpu_id is not None:
+        if not (0 <= gpu_id < n):
+            raise ValueError(f'GPU {gpu_id} not found (available: 0 ~ {n - 1})')
+        chosen = gpu_id
+    else:
+        # Pick the GPU with the most free memory
+        free_mem = [torch.cuda.mem_get_info(i)[0] for i in range(n)]
+        chosen   = max(range(n), key=lambda i: free_mem[i])
+        if n > 1:
+            summary = '  |  '.join(
+                f'GPU{i}: {free_mem[i] / 1024**3:.1f} GB free' for i in range(n)
+            )
+            print(f'[Device] Auto-selected GPU {chosen}  [{summary}]')
+
+    dev = torch.device(f'cuda:{chosen}')
+    torch.cuda.set_device(dev)
+    torch.backends.cudnn.benchmark = True
+    print(f'[Device] {torch.cuda.get_device_name(dev)}  (cuda:{chosen})')
+    return dev
 
 
 def extract_log_key(line):

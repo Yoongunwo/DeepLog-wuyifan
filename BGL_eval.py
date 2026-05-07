@@ -4,11 +4,11 @@ import argparse
 
 from BGL_utils import (
     load_log_file, load_vocab, keys_to_ids,
-    make_sequences, DeepLogModel, device,
+    make_sequences, DeepLogModel, select_device,
 )
 
 
-def evaluate(model, inputs, outputs, window_size, num_candidates,
+def evaluate(model, inputs, outputs, window_size, num_candidates, device,
              batch_size=4096, input_size=1):
     """
     Batch-inference evaluation using the top-g candidate approach.
@@ -51,17 +51,13 @@ if __name__ == '__main__':
     parser.add_argument('-vocab_path',     default='model/bgl_vocab.pkl', type=str)
     parser.add_argument('-benign_log',     default='../Data/BGL/BGL_benign.log', type=str)
     parser.add_argument('-anomaly_log',    default='../Data/BGL/BGL_anomaly.log', type=str)
+    parser.add_argument('--gpu', default=None, type=int,
+                        help='GPU index to use (default: auto-select by free memory)')
     args = parser.parse_args()
 
     input_size = 1
+    device     = select_device(args.gpu)
     use_cuda   = device.type == 'cuda'
-
-    # ── GPU setup ─────────────────────────────────────────────────────────────
-    if use_cuda:
-        torch.backends.cudnn.benchmark = True
-        print(f'[Device] GPU : {torch.cuda.get_device_name(0)}')
-    else:
-        print('[Device] CPU (CUDA not available)')
 
     # ── Load vocab & model ────────────────────────────────────────────────────
     vocab = load_vocab(args.vocab_path)
@@ -80,7 +76,7 @@ if __name__ == '__main__':
     benign_keys = load_log_file(args.benign_log)
     benign_ids  = keys_to_ids(benign_keys, vocab)
     b_in, b_out = make_sequences(benign_ids, args.window_size)
-    fp, total_n = evaluate(model, b_in, b_out, args.window_size, args.num_candidates)
+    fp, total_n = evaluate(model, b_in, b_out, args.window_size, args.num_candidates, device)
     tn = total_n - fp
 
     # ── Anomaly evaluation ────────────────────────────────────────────────────
@@ -88,7 +84,7 @@ if __name__ == '__main__':
     anomaly_keys = load_log_file(args.anomaly_log)
     anomaly_ids  = keys_to_ids(anomaly_keys, vocab)
     a_in, a_out  = make_sequences(anomaly_ids, args.window_size)
-    tp, total_a  = evaluate(model, a_in, a_out, args.window_size, args.num_candidates)
+    tp, total_a  = evaluate(model, a_in, a_out, args.window_size, args.num_candidates, device)
     fn = total_a - tp
 
     # ── Metrics ───────────────────────────────────────────────────────────────

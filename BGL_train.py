@@ -9,7 +9,7 @@ import os
 
 from BGL_utils import (
     load_log_file, build_vocab, save_vocab, keys_to_ids,
-    make_sequences, DeepLogModel, device,
+    make_sequences, DeepLogModel, select_device,
 )
 
 
@@ -24,18 +24,14 @@ if __name__ == '__main__':
                         help='Fraction of benign log to use for training (0~1], '
                              'taken sequentially from the start (time order)')
     parser.add_argument('-benign_log',  default='../Data/BGL/BGL_benign.log', type=str)
+    parser.add_argument('--gpu', default=None, type=int,
+                        help='GPU index to use (default: auto-select by free memory)')
     args = parser.parse_args()
 
     input_size = 1
     model_dir  = 'model'
+    device     = select_device(args.gpu)
     use_cuda   = device.type == 'cuda'
-
-    # ── GPU setup ─────────────────────────────────────────────────────────────
-    if use_cuda:
-        torch.backends.cudnn.benchmark = True
-        print(f'[Device] GPU : {torch.cuda.get_device_name(0)}')
-    else:
-        print('[Device] CPU (CUDA not available)')
 
     # ── Load & parse log ──────────────────────────────────────────────────────
     print(f'[BGL Train] log  : {args.benign_log}')
