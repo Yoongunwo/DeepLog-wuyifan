@@ -1,3 +1,5 @@
+import re
+import os
 import time
 import torch
 import argparse
@@ -48,7 +50,9 @@ if __name__ == '__main__':
                         help='Top-g candidates for anomaly detection')
     parser.add_argument('--model_path',     required=True, type=str,
                         help='Path to trained .pt model file')
-    parser.add_argument('--vocab_path',     default='model/bgl_vocab.pkl', type=str)
+    parser.add_argument('--vocab_path',     default=None, type=str,
+                        help='Path to vocab .pkl (default: auto-derived from model_path, '
+                             'e.g. model/bgl_vocab_r0.1.pkl for ratio=0.1)')
     parser.add_argument('--benign_log',     default='../Data/BGL/BGL_benign.log', type=str)
     parser.add_argument('--anomaly_log',    default='../Data/BGL/BGL_anomaly.log', type=str)
     parser.add_argument('--gpu', default=None, type=int,
@@ -59,6 +63,19 @@ if __name__ == '__main__':
     device     = select_device(args.gpu)
     use_cuda   = device.type == 'cuda'
 
+    # ── Resolve vocab path ────────────────────────────────────────────────────
+    if args.vocab_path is None:
+        m = re.search(r'ratio=([0-9.]+)', args.model_path)
+        if not m:
+            raise ValueError(
+                "Cannot auto-derive vocab path: 'ratio=X.X' not found in model_path. "
+                "Pass --vocab_path explicitly."
+            )
+        ratio = m.group(1)
+        model_dir = os.path.dirname(args.model_path) or 'model'
+        args.vocab_path = os.path.join(model_dir, f'bgl_vocab_r{ratio}.pkl')
+        print(f'[Vocab] Auto-derived path: {args.vocab_path}')
+
     # ── Load vocab & model ────────────────────────────────────────────────────
     vocab = load_vocab(args.vocab_path)
     num_classes = len(vocab) + 1
@@ -66,7 +83,7 @@ if __name__ == '__main__':
 
     model = DeepLogModel(input_size, args.hidden_size,
                          args.num_layers, num_classes).to(device)
-    model.load_state_dict(torch.load(args.model_path, map_location=device))
+    model.load_state_dict(torch.load(args.model_path, map_location=device, weights_only=True))
     print(f'Model loaded : {args.model_path}')
 
     start = time.time()

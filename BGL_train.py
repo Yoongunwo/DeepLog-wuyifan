@@ -45,7 +45,7 @@ if __name__ == '__main__':
     print(f'  vocab size   : {len(vocab):,}  (num_classes={num_classes})')
 
     os.makedirs(model_dir, exist_ok=True)
-    vocab_path = os.path.join(model_dir, 'bgl_vocab.pkl')
+    vocab_path = os.path.join(model_dir, f'bgl_vocab_r{args.ratio}.pkl')
     save_vocab(vocab, vocab_path)
     print(f'  vocab saved  : {vocab_path}')
 
