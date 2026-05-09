@@ -41,16 +41,16 @@ def evaluate(model, inputs, outputs, window_size, num_candidates, device,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='DeepLog evaluation on BGL dataset')
-    parser.add_argument('-num_layers',     default=2,    type=int)
-    parser.add_argument('-hidden_size',    default=64,   type=int)
-    parser.add_argument('-window_size',    default=10,   type=int)
-    parser.add_argument('-num_candidates', default=9,    type=int,
+    parser.add_argument('--num_layers',     default=2,    type=int)
+    parser.add_argument('--hidden_size',    default=64,   type=int)
+    parser.add_argument('--window_size',    default=10,   type=int)
+    parser.add_argument('--num_candidates', default=9,    type=int,
                         help='Top-g candidates for anomaly detection')
-    parser.add_argument('-model_path',     required=True, type=str,
+    parser.add_argument('--model_path',     required=True, type=str,
                         help='Path to trained .pt model file')
-    parser.add_argument('-vocab_path',     default='model/bgl_vocab.pkl', type=str)
-    parser.add_argument('-benign_log',     default='../Data/BGL/BGL_benign.log', type=str)
-    parser.add_argument('-anomaly_log',    default='../Data/BGL/BGL_anomaly.log', type=str)
+    parser.add_argument('--vocab_path',     default='model/bgl_vocab.pkl', type=str)
+    parser.add_argument('--benign_log',     default='../Data/BGL/BGL_benign.log', type=str)
+    parser.add_argument('--anomaly_log',    default='../Data/BGL/BGL_anomaly.log', type=str)
     parser.add_argument('--gpu', default=None, type=int,
                         help='GPU index to use (default: auto-select by free memory)')
     args = parser.parse_args()
