@@ -65,7 +65,7 @@ if __name__ == '__main__':
 
     # ── Resolve vocab path ────────────────────────────────────────────────────
     if args.vocab_path is None:
-        m = re.search(r'ratio=([0-9.]+)', args.model_path)
+        m = re.search(r'ratio=(\d+(?:\.\d+)?)', args.model_path)
         if not m:
             raise ValueError(
                 "Cannot auto-derive vocab path: 'ratio=X.X' not found in model_path. "
